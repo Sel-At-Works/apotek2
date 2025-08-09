@@ -68,6 +68,7 @@ $query .= " LIMIT $limit OFFSET $offset";
 
 
 $result = $conn->query($query);
+
 ?>
 
 
@@ -263,8 +264,8 @@ $result = $conn->query($query);
         <tr>
             <th>ID Transaksi</th>
             <th>Tanggal</th>
-            <th>ID User</th>
-            <th>ID Member</th>
+            <!-- <th>Nama Kasir</th> -->
+            <th>Nama Member</th>
             <th>ID Produk</th>
             <th>Nama Produk</th>
             <th>Jumlah</th>
@@ -278,7 +279,7 @@ $result = $conn->query($query);
                 <tr>
                     <td><?= $row['id_transaksi'] ?></td>
                     <td><?= $row['tanggal'] ?></td>
-                    <td><?= $row['nama_user'] ?? '-' ?></td>
+                    <!-- <td><?= htmlspecialchars($row['nama_user'] ?? '-') ?></td> -->
 <td><?= $row['nama_member'] ?? '-' ?></td>
 
                     <td><?= $row['id_produk'] ?></td>
