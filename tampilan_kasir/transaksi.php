@@ -28,15 +28,16 @@ if (isset($_POST['cek_member'])) {
     $total_harga = (int) $_POST['total_harga'];
 
     if ($no_telp === "") {
-        // Bukan member
+        // Tidak pakai member, lanjutkan dengan default nonaktif
         $id_member = null;
         $nama_member = "-";
         $status = "nonaktif";
         $poin_member = 0;
         $diskon = 0;
         $poin_dipakai = 0;
+        $error_msg = ""; // Pastikan tidak error
     } else {
-        // Cek di database
+        // Cek data member di database
         $member = $conn->query("SELECT * FROM members WHERE no_hp = '$no_telp'")->fetch_assoc();
         if ($member) {
             $id_member = $member['id'];
@@ -44,7 +45,14 @@ if (isset($_POST['cek_member'])) {
             $status = strtolower($member['status']);
             $poin_member = $member['poin'];
 
-            if ($status === 'aktif') {
+            if ($status !== 'aktif') {
+                // Kalau member ditemukan tapi status bukan aktif, batalkan proses
+                $error_msg = "⚠️ Member ditemukan tapi status tidak aktif! Transaksi dibatalkan.";
+                // Reset agar tidak lanjut
+                $diskon = 0;
+                $poin_dipakai = 0;
+            } else {
+                // Member aktif, hitung diskon poin jika ada
                 if ($poin_member >= 10) {
                     $diskon = $poin_member * 100;
                     if ($diskon > $total_harga) {
@@ -55,11 +63,17 @@ if (isset($_POST['cek_member'])) {
                     $diskon = 0;
                     $poin_dipakai = 0;
                 }
-            } else {
-                $error_msg = "⚠️ Member ditemukan tapi status tidak aktif!";
+                $error_msg = ""; // Clear error kalau sebelumnya ada
             }
         } else {
             $error_msg = "❌ Nomor telepon tidak terdaftar sebagai member!";
+            // Reset agar tidak lanjut
+            $diskon = 0;
+            $poin_dipakai = 0;
+            $id_member = null;
+            $nama_member = "-";
+            $status = "nonaktif";
+            $poin_member = 0;
         }
     }
 }
