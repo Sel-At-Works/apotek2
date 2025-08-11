@@ -69,6 +69,18 @@ $query .= " LIMIT $limit OFFSET $offset";
 
 $result = $conn->query($query);
 
+// === Query total keuntungan ===
+$keuntunganQuery = "
+    SELECT 
+        SUM((p.harga_jual - p.harga_beli) * td.jumlah) AS total_keuntungan
+    FROM transaksi_detail td
+    JOIN transaksi t ON td.id_transaksi = t.id
+    JOIN produk p ON td.id_produk = p.id
+    $where_clause
+";
+$keuntunganResult = $conn->query($keuntunganQuery);
+$totalKeuntungan = $keuntunganResult->fetch_assoc()['total_keuntungan'] ?? 0;
+
 ?>
 
 
@@ -296,6 +308,14 @@ $result = $conn->query($query);
         <?php endif; ?>
     </tbody>
 </table>
+<br>
+<table>
+    <tr style="background-color:#28a745;color:white;font-weight:bold;">
+        <td style="text-align:center;">Total Keuntungan: 
+            Rp<?= number_format($totalKeuntungan, 0, ',', '.') ?>
+        </td>
+    </tr>
+</table>
 <div class="pagination">
     <?php if ($page > 1): ?>
         <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>">&laquo; Prev</a>
@@ -309,6 +329,10 @@ $result = $conn->query($query);
         <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>">Next &raquo;</a>
     <?php endif; ?>
 </div>
+
+
+
+
 
 </div>
 
