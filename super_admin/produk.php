@@ -73,10 +73,20 @@ if (isset($_POST['edit'])) {
 // Hapus produk
 if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];
+
+    // Hapus transaksi detail dulu
+    $conn->query("DELETE FROM transaksi_detail WHERE id_produk = '$id'");
+
+    // Baru hapus produk
     $conn->query("DELETE FROM produk WHERE id = '$id'");
+
+    $_SESSION['message'] = "Produk dan data transaksi terkait berhasil dihapus.";
+    $_SESSION['msg_type'] = "success";
+
     header("Location: produk.php");
     exit;
 }
+
 
 $produk = $conn->query("SELECT produk.*, kategori.nama_kategori FROM produk JOIN kategori ON produk.id_kategori = kategori.id ORDER BY produk.id DESC");
 $kategoriList = $conn->query("SELECT * FROM kategori");
