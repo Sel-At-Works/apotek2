@@ -8,9 +8,52 @@ if ($conn->connect_error) {
     die("Koneksi gagal: " . $conn->connect_error);
 }
 
+function isNamaProdukDuplicate($conn, $nama) {
+    $nama = strtolower(trim($nama));
+    $stmt = $conn->prepare("SELECT 1 FROM produk WHERE LOWER(TRIM(nama_produk)) = ? LIMIT 1");
+    if (!$stmt) {
+        die("Prepare failed: " . $conn->error);
+    }
+    $stmt->bind_param("s", $nama);
+    if (!$stmt->execute()) {
+        die("Execute failed: " . $stmt->error);
+    }
+    $stmt->store_result();
+    $exists = $stmt->num_rows > 0;
+    $stmt->close();
+    return $exists;
+}
+
+function isNamaProdukDuplicateForEdit($conn, $nama, $id) {
+    $nama = strtolower(trim($nama));
+    $stmt = $conn->prepare("SELECT 1 FROM produk WHERE LOWER(TRIM(nama_produk)) = ? AND id != ? LIMIT 1");
+    if (!$stmt) {
+        die("Prepare failed: " . $conn->error);
+    }
+    $stmt->bind_param("si", $nama, $id);
+    if (!$stmt->execute()) {
+        die("Execute failed: " . $stmt->error);
+    }
+    $stmt->store_result();
+    $exists = $stmt->num_rows > 0;
+    $stmt->close();
+    return $exists;
+}
+
+
 // Tambah produk
 if (isset($_POST['tambah'])) {
     $nama = $_POST['nama_produk'];
+
+    // cek duplikat nama produk
+    if (isNamaProdukDuplicate($conn, $nama)) {
+        $_SESSION['message'] = "Nama produk sudah ada, silakan gunakan nama lain.";
+        $_SESSION['msg_type'] = "danger";
+        header("Location: produk.php");
+        exit;
+    }
+
+    // lanjut ambil data lain
     $id_kategori = $_POST['id_kategori'];
     $harga_beli = $_POST['harga_beli'];
     $harga = $_POST['harga_jual'];
@@ -23,10 +66,28 @@ if (isset($_POST['tambah'])) {
 
     if (move_uploaded_file($tmp, $folder)) {
         $conn->query("INSERT INTO produk (nama_produk, id_kategori, harga_beli, harga_jual, stok, kadaluarsa, gambar) VALUES ('$nama', '$id_kategori', '$harga_beli','$harga', '$stok', '$kadaluarsa', '$gambar')");
+        $_SESSION['message'] = "Produk berhasil ditambahkan.";
+        $_SESSION['msg_type'] = "success";
+        header("Location: produk.php");
+        exit;
+    } else {
+        $_SESSION['message'] = "Gagal upload gambar.";
+        $_SESSION['msg_type'] = "danger";
         header("Location: produk.php");
         exit;
     }
 }
+
+// // Fungsi cek duplikat nama produk untuk edit (tanpa COUNT)
+// function isNamaProdukDuplicateForEdit($conn, $nama, $id) {
+//     $stmt = $conn->prepare("SELECT 1 FROM produk WHERE LOWER(TRIM(nama_produk)) = LOWER(TRIM(?)) AND id != ? LIMIT 1");
+//     $stmt->bind_param("si", $nama, $id);
+//     $stmt->execute();
+//     $stmt->store_result();
+//     $exists = $stmt->num_rows > 0;
+//     $stmt->close();
+//     return $exists;
+// }
 
 if (isset($_POST['edit'])) {
     $id_edit = $_POST['id_edit'];
@@ -37,6 +98,14 @@ if (isset($_POST['edit'])) {
     $stok = $_POST['stok'];
     $kadaluarsa = $_POST['kadaluarsa'];
 
+    // Cek duplikat nama produk kecuali untuk id ini
+    if (isNamaProdukDuplicateForEdit($conn, $nama, $id_edit)) {
+        $_SESSION['message'] = "Nama produk sudah ada, silakan gunakan nama lain.";
+        $_SESSION['msg_type'] = "danger";
+        header("Location: produk.php");
+        exit;
+    }
+
     // Periksa apakah ada gambar baru diupload
     if (!empty($_FILES['gambar_baru']['name'])) {
         $gambar_baru = $_FILES['gambar_baru']['name'];
@@ -45,34 +114,54 @@ if (isset($_POST['edit'])) {
         move_uploaded_file($tmp, $folder);
 
         // Update dengan gambar baru
-       $conn->query("UPDATE produk SET 
-    nama_produk='$nama',
-    id_kategori='$id_kategori',
-    harga_beli='$harga_beli',  -- ✅ Tambahkan baris ini
-    harga_jual='$harga',
-    stok='$stok',
-    kadaluarsa='$kadaluarsa',
-    gambar='$gambar_baru'
-    WHERE id='$id_edit'");
-
+        $conn->query("UPDATE produk SET 
+            nama_produk='$nama',
+            id_kategori='$id_kategori',
+            harga_beli='$harga_beli',
+            harga_jual='$harga',
+            stok='$stok',
+            kadaluarsa='$kadaluarsa',
+            gambar='$gambar_baru'
+            WHERE id='$id_edit'");
     } else {
-      $conn->query("UPDATE produk SET 
-    nama_produk='$nama',
-    id_kategori='$id_kategori',
-    harga_beli='$harga_beli',  -- ✅ Tambahkan ini juga
-    harga_jual='$harga',
-    stok='$stok',
-    kadaluarsa='$kadaluarsa'
-    WHERE id='$id_edit'");
+        // Update tanpa ganti gambar
+        $conn->query("UPDATE produk SET 
+            nama_produk='$nama',
+            id_kategori='$id_kategori',
+            harga_beli='$harga_beli',
+            harga_jual='$harga',
+            stok='$stok',
+            kadaluarsa='$kadaluarsa'
+            WHERE id='$id_edit'");
+    }
+
+    $_SESSION['message'] = "Produk berhasil diperbarui.";
+    $_SESSION['msg_type'] = "success";
     header("Location: produk.php");
     exit;
-    }
 }
+
 
 
 // Hapus produk
 if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];
+
+    // Cek stok produk
+    $result = $conn->query("SELECT stok FROM produk WHERE id = '$id' LIMIT 1");
+    if ($result && $row = $result->fetch_assoc()) {
+        if ($row['stok'] > 0) {
+            $_SESSION['message'] = "Produk dengan stok > 0 tidak boleh dihapus.";
+            $_SESSION['msg_type'] = "danger";
+            header("Location: produk.php");
+            exit;
+        }
+    } else {
+        $_SESSION['message'] = "Produk tidak ditemukan.";
+        $_SESSION['msg_type'] = "danger";
+        header("Location: produk.php");
+        exit;
+    }
 
     // Hapus transaksi detail dulu
     $conn->query("DELETE FROM transaksi_detail WHERE id_produk = '$id'");
@@ -86,6 +175,7 @@ if (isset($_GET['hapus'])) {
     header("Location: produk.php");
     exit;
 }
+
 
 
 $produk = $conn->query("SELECT produk.*, kategori.nama_kategori FROM produk JOIN kategori ON produk.id_kategori = kategori.id ORDER BY produk.id DESC");
@@ -180,6 +270,25 @@ $kategoriList = $conn->query("SELECT * FROM kategori");
 <body>
 <div class="container">
   <h2>Data Produk</h2>
+  <?php if (isset($_SESSION['message'])): ?>
+  <div 
+    style="
+      padding: 15px; 
+      margin-bottom: 20px; 
+      border-radius: 5px; 
+      color: white; 
+      background-color: <?= ($_SESSION['msg_type'] == 'danger') ? '#dc3545' : '#28a745' ?>;
+      font-weight: bold;
+      max-width: 600px;
+    ">
+    <?= htmlspecialchars($_SESSION['message']) ?>
+  </div>
+  <?php
+    unset($_SESSION['message']);
+    unset($_SESSION['msg_type']);
+  ?>
+<?php endif; ?>
+
   <button class="btn-tambah" onclick="document.getElementById('modalTambah').style.display='flex'">+ Tambah Produk</button>
   <table>
     <tr>

@@ -11,36 +11,40 @@ if ($conn->connect_error) {
 
 // Fungsi cek duplikat nama kategori (untuk tambah)
 function isNamaKategoriDuplicate($conn, $nama) {
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM kategori WHERE nama_kategori = ?");
+    $stmt = $conn->prepare("SELECT 1 FROM kategori WHERE nama_kategori = ? LIMIT 1");
+    if (!$stmt) die("Prepare failed: " . $conn->error);
     $stmt->bind_param("s", $nama);
-    $stmt->execute();
-    $stmt->bind_result($count);
-    $stmt->fetch();
+    if (!$stmt->execute()) die("Execute failed: " . $stmt->error);
+    $stmt->store_result();
+    $exists = $stmt->num_rows > 0;
     $stmt->close();
-    return $count > 0;
+    return $exists;
 }
 
 // Fungsi cek duplikat nama kategori (untuk edit)
 function isNamaKategoriDuplicateForEdit($conn, $nama, $id) {
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM kategori WHERE nama_kategori = ? AND id != ?");
+    $stmt = $conn->prepare("SELECT 1 FROM kategori WHERE nama_kategori = ? AND id != ? LIMIT 1");
+    if (!$stmt) die("Prepare failed: " . $conn->error);
     $stmt->bind_param("si", $nama, $id);
-    $stmt->execute();
-    $stmt->bind_result($count);
-    $stmt->fetch();
+    if (!$stmt->execute()) die("Execute failed: " . $stmt->error);
+    $stmt->store_result();
+    $exists = $stmt->num_rows > 0;
     $stmt->close();
-    return $count > 0;
+    return $exists;
 }
 
 // Fungsi cek kategori yang masih dipakai produk
 function isKategoriDipakaiProduk($conn, $id) {
-    $stmt = $conn->prepare("SELECT COUNT(*) FROM produk WHERE id_kategori = ?");
+    $stmt = $conn->prepare("SELECT 1 FROM produk WHERE id_kategori = ? LIMIT 1");
+    if (!$stmt) die("Prepare failed: " . $conn->error);
     $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->bind_result($count);
-    $stmt->fetch();
+    if (!$stmt->execute()) die("Execute failed: " . $stmt->error);
+    $stmt->store_result();
+    $exists = $stmt->num_rows > 0;
     $stmt->close();
-    return $count > 0;
+    return $exists;
 }
+
 
 // Ambil ID tertinggi untuk next id
 $result_id = $conn->query("SELECT MAX(id) AS max_id FROM kategori");
