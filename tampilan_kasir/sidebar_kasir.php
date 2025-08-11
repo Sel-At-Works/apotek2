@@ -143,6 +143,7 @@ $totalProduk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS tot
 
         <ul>
             <!-- <li><a href="kasir.php">🛒 Kasir</a></li> -->
+            <li><a href="dashboard.php">📊 Dashboard</a></li>
             <li><a href="member.php">👥 Member</a></li>
             <li><a href="produk.php">💊 Produk</a></li>
             <!-- <li><a href="kategori.php">📦 Kategori</a></li> -->

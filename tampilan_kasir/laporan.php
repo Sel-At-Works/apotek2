@@ -269,6 +269,13 @@ $totalKeuntungan = $keuntunganResult->fetch_assoc()['total_keuntungan'] ?? 0;
         </select>
 
         <button type="submit">Tampilkan</button>
+        
+          <!-- Tombol Unduh di sini -->
+    <a href="unduh_laporan.php?<?= http_build_query($_GET) ?>" 
+   style="margin-left: 20px; padding: 10px 15px; background:#28a745; color:#fff; text-decoration:none; border-radius:5px;">
+   Unduh Laporan (Excel)
+</a>
+
     </form>
 
    <table>

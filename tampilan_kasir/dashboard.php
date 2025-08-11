@@ -12,5 +12,7 @@
 
     <?php include 'card.php'; ?> <!-- Hanya tampil di halaman ini -->
 
+    <?php include 'grafik_produk.php'; ?>
+
 </body>
 </html>
