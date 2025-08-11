@@ -136,7 +136,7 @@
             </form>
             <div class="action-links">
                 <p class="signup">Belum punya akun? <a href="tambah_user.php">Daftar di sini</a></p>
-                <p class="forgot"><a href="lupa_password.php">Lupa Password?</a></p>
+                <p class="forgot"><a href="lupa_password.html">Lupa Password?</a></p>
             </div>
             <?php
             if (isset($_SESSION['error'])) {
