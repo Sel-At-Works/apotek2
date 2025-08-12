@@ -245,23 +245,41 @@ form label[for="filter_kategori"] {
   </div>
 </div>
 
-<form method="GET" style="margin-bottom: 20px;">
-  <label for="filter_kategori"><strong>Filter Kategori:</strong></label>
-  <select name="filter_kategori" id="filter_kategori" onchange="this.form.submit()">
-    <option value="">Semua Kategori</option>
+<div style="margin-bottom: 20px;">
+    <strong>Filter Kategori:</strong><br>
+    <a href="produk.php" class="btn-filter <?= ($filter_kategori === '') ? 'active' : '' ?>">Semua</a>
     <?php
     $kategoriFilter = $conn->query("SELECT * FROM kategori");
     while ($kat = $kategoriFilter->fetch_assoc()) {
-      $selected = (isset($_GET['filter_kategori']) && $_GET['filter_kategori'] == $kat['id']) ? 'selected' : '';
-      echo "<option value='{$kat['id']}' $selected>{$kat['nama_kategori']}</option>";
+        $active = ($filter_kategori == $kat['id']) ? 'active' : '';
+        echo "<a href='produk.php?filter_kategori={$kat['id']}' class='btn-filter $active'>{$kat['nama_kategori']}</a>";
     }
     ?>
-  </select>
-   <!-- 🔻 RESET FILTER DITEMPATKAN DI SINI -->
-  <?php if (isset($_GET['filter_kategori']) && $_GET['filter_kategori'] !== ''): ?>
-    <a href="produk.php" style="margin-left: 10px; color: red; text-decoration: underline;">Reset Filter</a>
-  <?php endif; ?>
-</form>
+</div>
+
+<style>
+.btn-filter {
+    display: inline-block;
+    padding: 8px 15px;
+    margin: 5px 5px 0 0;
+    background-color: #f1f1f1;
+    color: #333;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+.btn-filter:hover {
+    background-color: #007bff;
+    color: white;
+}
+.btn-filter.active {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+</style>
 
 
 
