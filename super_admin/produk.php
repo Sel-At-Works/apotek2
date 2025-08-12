@@ -311,7 +311,20 @@ $kategoriList = $conn->query("SELECT * FROM kategori");
       <td>Rp<?= number_format($row['harga_beli'], 0, ',', '.') ?></td>
       <td>Rp<?= number_format($row['harga_jual'], 0, ',', '.') ?></td>
       <td><?= $row['stok'] ?></td>
-      <td><?= $row['kadaluarsa'] ?></td>
+      <td>
+<?php
+  $tanggal_kadaluarsa = $row['kadaluarsa'];
+  $hari_ini = date('Y-m-d');
+
+  if ($tanggal_kadaluarsa < $hari_ini) {
+      echo "<span style='color: white; background: red; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>
+            &#9888; Kadaluarsa (" . htmlspecialchars($tanggal_kadaluarsa) . ")
+            </span>";
+  } else {
+      echo htmlspecialchars($tanggal_kadaluarsa);
+  }
+?>
+</td>
       <td><img class="gambar-produk" src="../uploads/<?= htmlspecialchars($row['gambar']) ?>" alt="Gambar"></td>
       <td>
   <img src="https://barcode.tec-it.com/barcode.ashx?data=<?= $row['id'] ?>&code=Code128&dpi=96" alt="Barcode">

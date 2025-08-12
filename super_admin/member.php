@@ -142,7 +142,7 @@ $members = $conn->query("SELECT * FROM members ORDER BY id DESC");
 <body>
 <div class="container">
     <h2>Manajemen Member</h2>
-    <button class="btn-tambah" onclick="document.getElementById('modalTambah').style.display='flex'">+ Tambah Member</button>
+    <!-- <button class="btn-tambah" onclick="document.getElementById('modalTambah').style.display='flex'">+ Tambah Member</button> -->
 
     <table>
         <tr>
