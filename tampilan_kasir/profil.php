@@ -205,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
 
     <div class="lupa-password">
-      <a href="lupa_password.php?user=<?= urlencode($data['username']) ?>">Lupa Password?</a>
+      <a href="../lupa_password.html?user=marsel">Lupa Password</a>
     </div>
   </div>
 </div>

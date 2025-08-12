@@ -119,8 +119,9 @@ if ($data['role'] !== 'superadmin') {
     <div class="profil-item"><strong>Status Login:</strong> <?= $data['status_login'] == 1 ? 'Online' : 'Offline' ?></div>
 
     <div class="lupa-password">
-      <a href="lupa_password.php?user=<?= urlencode($data['username']) ?>">Lupa Password?</a>
-    </div>
+  <a href="../lupa_password.html?user=marsel">Lupa Password</a>
+
+</div>
   </div>
 </div>
 

@@ -142,6 +142,7 @@ $totalProduk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS tot
 </a>
 
         <ul>
+            <li><a href="dashboard.php">📊 Dashboard</a></li>
             <li><a href="kasir.php">🛒 Kasir</a></li>
             <li><a href="member.php">👥 Member</a></li>
             <li><a href="kategori.php">📦 Kategori</a></li>
@@ -149,7 +150,7 @@ $totalProduk = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS tot
             <li><a href="laporan.php">📊 Laporan</a></li>
             <!-- <li><a href="dashboard.php">Tampilan Awal</a></li> -->
             <?php if ($role === 'superadmin'): ?>
-                <li><a href="superadmin.php">🛠️ Super Admin</a></li>
+                <!-- <li><a href="superadmin.php">🛠️ Super Admin</a></li> -->
             <?php endif; ?>
              <li><a href="../logout.php"> []keluar</a></li>
         </ul>
