@@ -172,6 +172,55 @@ if (!empty($_SESSION['keranjang'])) {
 
 unset($_SESSION['keranjang']);
 
+// Kirim WA via Fonnte
+$token = "qK2p9o1KxjuZcuteBnna"; // Ganti dengan Account Token dari Fonnte
+// Ambil nomor HP member (jika ada)
+$no_hp = null;
+if ($id_member !== null) {
+    $result = $koneksi->query("SELECT no_hp FROM members WHERE id = $id_member");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        $no_hp = $row['no_hp'] ?? null;
+    }
+}
+
+if ($no_hp) {
+    $target = preg_replace('/[^0-9]/', '', $no_hp);
+    if (substr($target, 0, 1) == '0') {
+        $target = '62' . substr($target, 1);
+    }
+
+    $tanggal = date('Y-m-d H:i:s');
+    $pesan = "*Struk Pembayaran Apotek Sehat*\n\n".
+             "Tanggal: {$tanggal}\n".
+             "Total: Rp".number_format($total_harga,0,',','.')."\n".
+             "Diskon: Rp".number_format($diskon,0,',','.')."\n".
+             "Dibayar: Rp".number_format($uang_dibayar,0,',','.')."\n".
+             "Kembalian: Rp".number_format($kembalian,0,',','.')."\n\n".
+             "Terima kasih sudah berbelanja 🙏";
+
+    $curl = curl_init();
+    curl_setopt_array($curl, [
+        CURLOPT_URL => "https://api.fonnte.com/send",
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => [
+            'target' => $target,
+            'message' => $pesan
+        ],
+        CURLOPT_HTTPHEADER => [
+            "Authorization: $token"
+        ],
+    ]);
+    $response = curl_exec($curl);
+    curl_close($curl);
+}
+
+// // Redirect ke struk.php agar langsung tampil struknya
+// header("Location: struk.php?id=$id_transaksi&diskon=$diskon");
+// exit();
+
+
 // Redirect ke struk.php agar langsung tampil struknya
 header("Location: struk.php?id=$id_transaksi&diskon=$diskon");
 exit();
