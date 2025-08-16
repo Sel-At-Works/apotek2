@@ -26,10 +26,21 @@ if (isset($_POST['tambah'])) {
     exit;
 }
 
-// Hapus member
-// Hapus member
 if (isset($_GET['hapus'])) {
     $id = (int)$_GET['hapus'];
+
+    // Cek apakah member sedang aktif
+    $cekAktif = $conn->query("SELECT status FROM members WHERE id = $id LIMIT 1");
+    if ($cekAktif->num_rows > 0) {
+        $row = $cekAktif->fetch_assoc();
+        if (strtolower($row['status']) == 'aktif') {
+            echo "<script>
+                alert('Member ini sedang AKTIF, tidak dapat dihapus!');
+                window.location='member.php';
+            </script>";
+            exit;
+        }
+    }
 
     // Cek apakah member pernah transaksi
     $cekTransaksi = $conn->query("SELECT 1 FROM transaksi WHERE id_member = $id LIMIT 1");
@@ -41,11 +52,12 @@ if (isset($_GET['hapus'])) {
         exit;
     }
 
-    // Jika belum pernah transaksi, hapus
+    // Jika belum aktif & belum pernah transaksi, hapus
     $conn->query("DELETE FROM members WHERE id = $id");
     header("Location: member.php");
     exit;
 }
+
 
 
 // Edit member
