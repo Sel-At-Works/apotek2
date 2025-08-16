@@ -42,15 +42,15 @@ if (isset($_GET['hapus'])) {
         }
     }
 
-    // Cek apakah member pernah transaksi
-    $cekTransaksi = $conn->query("SELECT 1 FROM transaksi WHERE id_member = $id LIMIT 1");
-    if ($cekTransaksi->num_rows > 0) {
-        echo "<script>
-            alert('Member ini sudah melakukan transaksi dan tidak dapat dihapus!');
-            window.location='member.php';
-        </script>";
-        exit;
-    }
+    // // Cek apakah member pernah transaksi
+    // $cekTransaksi = $conn->query("SELECT 1 FROM transaksi WHERE id_member = $id LIMIT 1");
+    // if ($cekTransaksi->num_rows > 0) {
+    //     echo "<script>
+    //         alert('Member ini sudah melakukan transaksi dan tidak dapat dihapus!');
+    //         window.location='member.php';
+    //     </script>";
+    //     exit;
+    // }
 
     // Jika belum aktif & belum pernah transaksi, hapus
     $conn->query("DELETE FROM members WHERE id = $id");

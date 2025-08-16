@@ -164,7 +164,7 @@ if (isset($_GET['hapus'])) {
     }
 
     // Hapus transaksi detail dulu
-    $conn->query("DELETE FROM transaksi_detail WHERE id_produk = '$id'");
+    // $conn->query("DELETE FROM transaksi_detail WHERE id_produk = '$id'");
 
     // Baru hapus produk
     $conn->query("DELETE FROM produk WHERE id = '$id'");

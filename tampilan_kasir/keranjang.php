@@ -12,6 +12,22 @@ if (!isset($_SESSION['keranjang'])) {
   $_SESSION['keranjang'] = [];
 }
 
+// Inisialisasi timer untuk keranjang
+if (!isset($_SESSION['keranjang_timer'])) {
+    $_SESSION['keranjang_timer'] = [];
+}
+
+// Hapus produk dari keranjang jika sudah lebih dari 1 menit
+foreach ($_SESSION['keranjang_timer'] as $id_produk => $waktu_masuk) {
+    if (time() - $waktu_masuk > 60) { // 60 detik = 1 menit
+        $jumlah_dihapus = $_SESSION['keranjang'][$id_produk] ?? 0;
+        unset($_SESSION['keranjang'][$id_produk]);
+        unset($_SESSION['keranjang_timer'][$id_produk]);
+        // Kembalikan stok
+        $conn->query("UPDATE produk SET stok = stok + $jumlah_dihapus WHERE id = '$id_produk'");
+    }
+}
+
 // Masukkan produk ke keranjang
 if (isset($_POST['masukkan'])) {
   $id_produk = $_POST['id_produk'];
@@ -26,6 +42,8 @@ if (isset($_POST['masukkan'])) {
     } else {
       $_SESSION['keranjang'][$id_produk] = 1;
     }
+     // Set waktu masuk untuk timer
+        $_SESSION['keranjang_timer'][$id_produk] = time();
   } else {
     echo "<script>alert('Stok produk tidak mencukupi!'); window.location.href='keranjang.php';</script>";
     exit;
@@ -42,6 +60,7 @@ if (isset($_POST['tambah'])) {
 
   if ($produk && $produk['stok'] > 0) {
     $_SESSION['keranjang'][$id]++;
+     $_SESSION['keranjang_timer'][$id] = time(); // Reset timer saat ditambah
     $conn->query("UPDATE produk SET stok = stok - 1 WHERE id = '$id'");
   } else {
     echo "<script>alert('Stok produk tidak mencukupi!'); window.location.href='keranjang.php';</script>";
@@ -58,9 +77,12 @@ if (isset($_POST['kurang'])) {
   if (isset($_SESSION['keranjang'][$id])) {
     $_SESSION['keranjang'][$id]--;
     $conn->query("UPDATE produk SET stok = stok + 1 WHERE id = '$id'");
-    if ($_SESSION['keranjang'][$id] <= 0) {
-      unset($_SESSION['keranjang'][$id]);
-    }
+ if ($_SESSION['keranjang'][$id] <= 0) {
+            unset($_SESSION['keranjang'][$id]);
+            unset($_SESSION['keranjang_timer'][$id]);
+        } else {
+            $_SESSION['keranjang_timer'][$id] = time(); // Reset timer saat dikurangi
+        }
   }
   header("Location: keranjang.php");
   exit;
@@ -74,6 +96,7 @@ if (isset($_POST['hapus'])) {
   $id = $_POST['id_produk'];
   $jumlah_dihapus = $_SESSION['keranjang'][$id] ?? 0;
   unset($_SESSION['keranjang'][$id]);
+  unset($_SESSION['keranjang_timer'][$id]);
 
   // Kembalikan stok
   $conn->query("UPDATE produk SET stok = stok + $jumlah_dihapus WHERE id = '$id'");
