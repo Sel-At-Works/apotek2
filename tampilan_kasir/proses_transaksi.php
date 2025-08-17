@@ -127,15 +127,19 @@ if ($id_member !== null) {
 }
 
 // Simpan transaksi utama
-$stmt = $koneksi->prepare("INSERT INTO transaksi (id_member, total_harga, dibayar, kembalian, tanggal) VALUES (?, ?, ?, ?, NOW())");
-if (!$stmt) {
-    die("Prepare statement gagal: " . $koneksi->error);
+// Simpan transaksi utama
+if ($id_member === null) {
+    $stmt = $koneksi->prepare("INSERT INTO transaksi (total_harga, diskon, dibayar, kembalian, tanggal) VALUES (?, ?, ?, ?, NOW())");
+    $stmt->bind_param("dddd", $total_harga, $diskon, $uang_dibayar, $kembalian);
+} else {
+    $stmt = $koneksi->prepare("INSERT INTO transaksi (id_member, total_harga, diskon, dibayar, kembalian, tanggal) VALUES (?, ?, ?, ?, ?, NOW())");
+    $stmt->bind_param("idddd", $id_member, $total_harga, $diskon, $uang_dibayar, $kembalian);
 }
-$stmt->bind_param("iddd", $id_member, $total_harga, $uang_dibayar, $kembalian);
 
 if (!$stmt->execute()) {
     die("Gagal menyimpan transaksi: " . $stmt->error);
 }
+
 $id_transaksi = $stmt->insert_id;
 $stmt->close();
 
@@ -221,6 +225,6 @@ if ($no_hp) {
 // exit();
 
 
-// Redirect ke struk.php agar langsung tampil struknya
-header("Location: struk.php?id=$id_transaksi&diskon=$diskon");
+unset($_SESSION['keranjang']);
+header("Location: struk.php?id=$id_transaksi"); // cukup kirim ID
 exit();
