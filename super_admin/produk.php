@@ -148,20 +148,26 @@ if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];
 
     // Cek stok produk
-    $result = $conn->query("SELECT stok FROM produk WHERE id = '$id' LIMIT 1");
-    if ($result && $row = $result->fetch_assoc()) {
-        if ($row['stok'] > 0) {
-            $_SESSION['message'] = "Produk dengan stok > 0 tidak boleh dihapus.";
-            $_SESSION['msg_type'] = "danger";
-            header("Location: produk.php");
-            exit;
-        }
-    } else {
-        $_SESSION['message'] = "Produk tidak ditemukan.";
+   // Cek stok & kadaluarsa
+$result = $conn->query("SELECT stok, kadaluarsa FROM produk WHERE id = '$id' LIMIT 1");
+if ($result && $row = $result->fetch_assoc()) {
+    $hari_ini = date('Y-m-d');
+    $kadaluarsa = $row['kadaluarsa'];
+
+    // Jika stok > 0 dan belum kadaluarsa → tidak boleh hapus
+    if ($row['stok'] > 0 && $kadaluarsa >= $hari_ini) {
+        $_SESSION['message'] = "Produk dengan stok > 0 dan belum kadaluarsa tidak boleh dihapus.";
         $_SESSION['msg_type'] = "danger";
         header("Location: produk.php");
         exit;
     }
+} else {
+    $_SESSION['message'] = "Produk tidak ditemukan.";
+    $_SESSION['msg_type'] = "danger";
+    header("Location: produk.php");
+    exit;
+}
+
 
     // Hapus transaksi detail dulu
     // $conn->query("DELETE FROM transaksi_detail WHERE id_produk = '$id'");
