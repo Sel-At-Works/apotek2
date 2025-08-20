@@ -7,26 +7,41 @@ if ($conn->connect_error) {
   die("Koneksi gagal: " . $conn->connect_error);
 }
 
-// Inisialisasi keranjang jika belum ada
-if (!isset($_SESSION['keranjang'])) {
-  $_SESSION['keranjang'] = [];
-}
+// // Cek apakah timer keranjang sudah habis
+// // Inisialisasi timer keranjang
+// if (!isset($_SESSION['keranjang_timer']) || !is_int($_SESSION['keranjang_timer'])) {
+//     $_SESSION['keranjang_timer'] = time();
+// }
 
-// Inisialisasi timer untuk keranjang
-if (!isset($_SESSION['keranjang_timer'])) {
-    $_SESSION['keranjang_timer'] = [];
-}
-
-// Hapus produk dari keranjang jika sudah lebih dari 1 menit
-foreach ($_SESSION['keranjang_timer'] as $id_produk => $waktu_masuk) {
-    if (time() - $waktu_masuk > 60) { // 60 detik = 1 menit
-        $jumlah_dihapus = $_SESSION['keranjang'][$id_produk] ?? 0;
-        unset($_SESSION['keranjang'][$id_produk]);
-        unset($_SESSION['keranjang_timer'][$id_produk]);
-        // Kembalikan stok
-        $conn->query("UPDATE produk SET stok = stok + $jumlah_dihapus WHERE id = '$id_produk'");
+// Cek apakah timer keranjang sudah habis
+if (isset($_SESSION['keranjang_timer']) && is_int($_SESSION['keranjang_timer'])) {
+    if (time() - $_SESSION['keranjang_timer'] > 60) { // 60 detik
+        // kembalikan stok semua produk
+        if(isset($_SESSION['keranjang']) && is_array($_SESSION['keranjang'])) {
+            foreach ($_SESSION['keranjang'] as $id_produk => $jumlah_dihapus) {
+                $conn->query("UPDATE produk SET stok = stok + $jumlah_dihapus WHERE id = '$id_produk'");
+            }
+        }
+        // kosongkan keranjang
+        $_SESSION['keranjang'] = [];
+        unset($_SESSION['keranjang_timer']);
     }
 }
+
+
+
+
+
+// // Hapus produk dari keranjang jika sudah lebih dari 1 menit
+// foreach ($_SESSION['keranjang_timer'] as $id_produk => $waktu_masuk) {
+//     if (time() - $waktu_masuk > 60) { // 60 detik = 1 menit
+//         $jumlah_dihapus = $_SESSION['keranjang'][$id_produk] ?? 0;
+//         unset($_SESSION['keranjang'][$id_produk]);
+//         unset($_SESSION['keranjang_timer']);
+//         // Kembalikan stok
+//         $conn->query("UPDATE produk SET stok = stok + $jumlah_dihapus WHERE id = '$id_produk'");
+//     }
+// }
 
 // Masukkan produk ke keranjang
 if (isset($_POST['masukkan'])) {
@@ -38,14 +53,12 @@ if (isset($_POST['masukkan'])) {
     $conn->query("UPDATE produk SET stok = stok - 1 WHERE id = '$id_produk'");
 
     if (isset($_SESSION['keranjang'][$id_produk])) {
-      // Kalau produk sudah ada → tambah jumlahnya
       $_SESSION['keranjang'][$id_produk]++;
-      // ❌ Jangan reset timer di sini
     } else {
-      // Kalau produk baru → buat timer awal
       $_SESSION['keranjang'][$id_produk] = 1;
-      $_SESSION['keranjang_timer'][$id_produk] = time(); 
     }
+     // Set waktu masuk untuk timer
+        $_SESSION['keranjang_timer'] = time();
   } else {
     echo "<script>alert('Stok produk tidak mencukupi!'); window.location.href='keranjang.php';</script>";
     exit;
@@ -53,7 +66,6 @@ if (isset($_POST['masukkan'])) {
   header("Location: keranjang.php");
   exit;
 }
-
 
 
 // Tambah jumlah
@@ -63,7 +75,7 @@ if (isset($_POST['tambah'])) {
 
   if ($produk && $produk['stok'] > 0) {
     $_SESSION['keranjang'][$id]++;
-    // ❌ Jangan reset timer
+     $_SESSION['keranjang_timer']= time(); // Reset timer saat ditambah
     $conn->query("UPDATE produk SET stok = stok - 1 WHERE id = '$id'");
   } else {
     echo "<script>alert('Stok produk tidak mencukupi!'); window.location.href='keranjang.php';</script>";
@@ -73,40 +85,43 @@ if (isset($_POST['tambah'])) {
   exit;
 }
 
-
-
 // Kurangi jumlah
 if (isset($_POST['kurang'])) {
-  $id = $_POST['id_produk'];
-  if (isset($_SESSION['keranjang'][$id])) {
-    $_SESSION['keranjang'][$id]--;
-    $conn->query("UPDATE produk SET stok = stok + 1 WHERE id = '$id'");
+    $id = $_POST['id_produk'];
+    if (isset($_SESSION['keranjang'][$id])) {
+        $_SESSION['keranjang'][$id]--;
+        $conn->query("UPDATE produk SET stok = stok + 1 WHERE id = '$id'");
 
-    if ($_SESSION['keranjang'][$id] <= 0) {
-      unset($_SESSION['keranjang'][$id]);
-      unset($_SESSION['keranjang_timer'][$id]);
+        if ($_SESSION['keranjang'][$id] <= 0) {
+            unset($_SESSION['keranjang'][$id]);
+            if (empty($_SESSION['keranjang'])) {
+                unset($_SESSION['keranjang_timer']);
+            }
+        } else {
+            $_SESSION['keranjang_timer'] = time(); // Reset timer untuk seluruh keranjang
+        }
     }
-    // ❌ Jangan reset timer kalau masih ada sisa
-  }
-  header("Location: keranjang.php");
-  exit;
+    header("Location: keranjang.php");
+    exit;
 }
-
-
-
 
 // Hapus produk dari keranjang
 if (isset($_POST['hapus'])) {
-  $id = $_POST['id_produk'];
-  $jumlah_dihapus = $_SESSION['keranjang'][$id] ?? 0;
-  unset($_SESSION['keranjang'][$id]);
-  unset($_SESSION['keranjang_timer'][$id]);
+    $id = $_POST['id_produk'];
+    $jumlah_dihapus = $_SESSION['keranjang'][$id] ?? 0;
+    unset($_SESSION['keranjang'][$id]);
 
-  // Kembalikan stok
-  $conn->query("UPDATE produk SET stok = stok + $jumlah_dihapus WHERE id = '$id'");
-  header("Location: keranjang.php");
-  exit;
+    // Jika keranjang kosong, hapus timer
+    if (empty($_SESSION['keranjang'])) {
+        unset($_SESSION['keranjang_timer']);
+    }
+
+    // Kembalikan stok
+    $conn->query("UPDATE produk SET stok = stok + $jumlah_dihapus WHERE id = '$id'");
+    header("Location: keranjang.php");
+    exit;
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -212,66 +227,77 @@ if (isset($_POST['hapus'])) {
 ">← Kembali ke Produk</a>
 
   <h2>Isi Keranjang</h2>
+  <?php if (isset($_SESSION['keranjang_timer']) && !empty($_SESSION['keranjang'])): ?>
+<div style="margin: 20px 0 40px 0; width: 100%; max-width: 400px;">
+  <div style="background: #ddd; border-radius: 10px; overflow: hidden; height: 25px;">
+    <div id="progress-bar" style="height: 100%; background-color: #27ae60; width: 100%; text-align: center; color: white; line-height: 25px; font-weight: bold;">
+      60s
+    </div>
+  </div>
+</div>
+
+<script>
+  let waktu = <?= 60 - (time() - $_SESSION['keranjang_timer']) ?>;
+  const bar = document.getElementById("progress-bar");
+
+  const countdown = setInterval(() => {
+    if (waktu <= 0) {
+      clearInterval(countdown);
+      bar.innerHTML = "⏰ Waktu habis!";
+      bar.style.backgroundColor = "#e74c3c";
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      bar.innerHTML = waktu + " detik";
+      if (waktu <= 10) {
+        bar.style.backgroundColor = "#e74c3c";
+      } else if (waktu <= 30) {
+        bar.style.backgroundColor = "#f1c40f";
+      }
+      bar.style.width = (waktu / 60 * 100) + "%";
+      waktu--;
+    }
+  }, 1000);
+</script>
+<?php endif; ?>
+
+
   <div class="keranjang-container">
-    <?php
-// 🔍 Hapus produk dari keranjang kalau sudah dihapus admin
-foreach ($_SESSION['keranjang'] as $id_produk => $qty) {
-  $cek = $conn->query("SELECT id FROM produk WHERE id = '$id_produk'");
-  if ($cek->num_rows == 0) {
-    unset($_SESSION['keranjang'][$id_produk]);
-  }
+<?php
+$total = 0;
+$sisa_waktu = null;
+if (isset($_SESSION['keranjang_timer'])) {
+    $sisa_waktu = 60 - (time() - $_SESSION['keranjang_timer']);
+    if ($sisa_waktu < 0) $sisa_waktu = 0;
 }
 
-$total = 0;
-foreach ($_SESSION['keranjang'] as $id_produk => $qty):
-  $produk = $conn->query("SELECT * FROM produk WHERE id = '$id_produk'")->fetch_assoc();
-  $subtotal = $produk['harga_jual'] * $qty;
-  $total += $subtotal;
-
-  // Hitung sisa waktu
-  $sisa_waktu = 60 - (time() - ($_SESSION['keranjang_timer'][$id_produk] ?? time()));
-  if ($sisa_waktu < 0) $sisa_waktu = 0;
+// Cek dulu apakah keranjang ada dan tidak kosong
+if (!empty($_SESSION['keranjang'])):
+    foreach ($_SESSION['keranjang'] as $id_produk => $qty):
+        $produk = $conn->query("SELECT * FROM produk WHERE id = '$id_produk'")->fetch_assoc();
+        $subtotal = $produk['harga_jual'] * $qty;
+        $total += $subtotal;
 ?>
-  <div class="card">
-    <img src="../uploads/<?= htmlspecialchars($produk['gambar']) ?>" alt="<?= htmlspecialchars($produk['nama_produk']) ?>">
-    <h3><?= htmlspecialchars($produk['nama_produk']) ?></h3>
-    <p>Jumlah: <?= $qty ?></p>
-    <p>Harga: Rp<?= number_format($produk['harga_jual'], 0, ',', '.') ?></p>
-    <p>Subtotal: Rp<?= number_format($subtotal, 0, ',', '.') ?></p>
+    <div class="card">
+        <img src="../uploads/<?= htmlspecialchars($produk['gambar']) ?>" alt="<?= htmlspecialchars($produk['nama_produk']) ?>">
+        <h3><?= htmlspecialchars($produk['nama_produk']) ?></h3>
+        <p>Jumlah: <?= $qty ?></p>
+        <p>Harga: Rp<?= number_format($produk['harga_jual'], 0, ',', '.') ?></p>
+        <p>Subtotal: Rp<?= number_format($subtotal, 0, ',', '.') ?></p>
 
-    <!-- ✅ Timer -->
-    <p id="timer-<?= $id_produk ?>" style="color:red; font-weight:bold;">
-      Sisa waktu: <?= $sisa_waktu ?> detik
-    </p>
+        <form method="post">
+          <input type="hidden" name="id_produk" value="<?= $id_produk ?>">
+          <button type="submit" name="tambah">+</button>
+          <button type="submit" name="kurang">-</button>
+          <button type="submit" name="hapus">Hapus</button>
+        </form>
+    </div>
+<?php
+    endforeach;
+else:
+    echo "<p>Keranjang kosong.</p>";
+endif;
+?>
 
-    <form method="post">
-      <input type="hidden" name="id_produk" value="<?= $id_produk ?>">
-      <button type="submit" name="tambah">+</button>
-      <button type="submit" name="kurang">-</button>
-      <button type="submit" name="hapus">Hapus</button>
-    </form>
-  </div>
-
-  <!-- ✅ Script countdown untuk produk ini -->
-  <script>
-    (function() {
-      let timerElement = document.getElementById("timer-<?= $id_produk ?>");
-      let waktu = <?= $sisa_waktu ?>;
-      let countdown = setInterval(function() {
-        if (waktu <= 0) {
-          clearInterval(countdown);
-          timerElement.innerHTML = "⏰ Waktu habis";
-          location.reload();
-        } else {
-          timerElement.innerHTML = "Sisa waktu: " + waktu + " detik";
-          waktu--;
-        }
-      }, 1000);
-    })();
-  </script>
-<?php endforeach; ?>
-
-  </div>
 
   <!-- TOTAL & TOMBOL TRANSAKSI TENGAH BAWAH (AGAK NAIK) -->
   <div style="
