@@ -19,7 +19,7 @@
     <div class="card kategori">
         <div class="icon">📦</div>
         <div class="card-info">
-            <h3>Total Kategori</h3>
+            <h3>Semua Kategori</h3>
             <div class="count-row">
                 <p><?= $totalKategori; ?></p>
                 <!-- <a href="kategori.php" class="view-details">Lihat</a> -->
